@@ -14,5 +14,10 @@
     "nuxt": "^3.8.1",
     "vue": "^3.3.8",
     "vue-router": "^4.2.5"
+  },
+  "dependencies": {
+    "@vercel/postgres": "^0.5.1",
+    "cheerio": "^1.0.0-rc.12",
+    "replicate": "^0.21.1"
   }
 }
