@@ -7,15 +7,94 @@ const replicate = new Replicate({
 })
 
 const URLS = [
+  'https://replicate.com/home',
+  'https://replicate.com/docs',
   'https://replicate.com/docs/get-started/nodejs',
   'https://replicate.com/docs/get-started/python',
-  'https://replicate.com/docs/get-started/nextjs'
+  'https://replicate.com/docs/get-started/nextjs',
+  'https://replicate.com/docs/get-started/swiftui',
+  'https://replicate.com/docs/get-started/discord-bot',
+  'https://hexdocs.pm/replicate/readme.html',
+  'https://replicate.com/docs/guides/push-a-model',
+  'https://replicate.com/docs/how-does-replicate-work#private-models',
+  'https://replicate.com/docs/guides/fine-tune-a-language-model',
+  'https://replicate.com/docs/guides/fine-tune-an-image-model',
+  'https://replicate.com/docs/guides/get-a-gpu-machine',
+  'https://replicate.com/docs/guides/push-stable-diffusion',
+  'https://raw.githubusercontent.com/replicate/setup-cog/main/README.md',
+  'https://replicate.com/docs/how-does-replicate-work',
+  'https://replicate.com/showcase',
+  'https://replicate.com/docs/webhooks',
+  'https://replicate.com/docs/streaming',
+  'https://replicate.com/docs/reference/client-libraries',
+  'https://replicate.com/docs/reference/http',
+  'https://replicate.com/about',
+  'https://replicate.com/pricing',
+  'https://replicate.com/blog/hello-world',
+  'https://replicate.com/blog/constraining-clipdraw',
+  'https://replicate.com/blog/model-docs',
+  'https://replicate.com/blog/exploring-text-to-image-models',
+  'https://replicate.com/blog/daily-news',
+  'https://replicate.com/blog/grab-hundreds-of-images-with-clip-and-laion',
+  'https://replicate.com/blog/uncanny-spaces',
+  'https://replicate.com/blog/build-a-robot-artist-for-your-discord-server-with-stable-diffusion',
+  'https://replicate.com/blog/run-stable-diffusion-with-an-api',
+  'https://replicate.com/blog/run-stable-diffusion-on-m1-mac',
+  'https://replicate.com/blog/dreambooth-api',
+  'https://replicate.com/blog/lora-faster-fine-tuning-of-stable-diffusion',
+  'https://replicate.com/blog/machine-learning-needs-better-tools',
+  'https://replicate.com/blog/replicate-alpaca',
+  'https://replicate.com/blog/fine-tune-llama-to-speak-like-homer-simpson',
+  'https://replicate.com/blog/llama-roundup',
+  'https://replicate.com/blog/fine-tune-alpaca-with-lora',
+  'https://replicate.com/blog/language-models',
+  'https://replicate.com/blog/autocog',
+  'https://replicate.com/blog/language-model-roundup',
+  'https://replicate.com/blog/new-status-page',
+  'https://replicate.com/blog/turn-your-llm-into-a-poet',
+  'https://replicate.com/blog/llama-2-roundup',
+  'https://replicate.com/blog/fine-tune-llama-2',
+  'https://replicate.com/blog/run-llama-locally',
+  'https://replicate.com/blog/run-sdxl-with-an-api',
+  'https://replicate.com/blog/run-llama-2-with-an-api',
+  'https://replicate.com/blog/all-the-llamas',
+  'https://replicate.com/blog/fine-tune-sdxl',
+  'https://replicate.com/blog/streaming',
+  'https://replicate.com/blog/how-to-prompt-llama',
+  'https://replicate.com/blog/cutting-prices-in-half',
+  'https://replicate.com/blog/painting-with-words-a-history-of-text-to-image-ai',
+  'https://replicate.com/blog/fine-tune-cold-boots',
+  'https://replicate.com/changelog'
 ]
 
+const jsonToAscii = (jsonText) => {
+  var s = ''
+
+  for (var i = 0; i < jsonText.length; ++i) {
+    var c = jsonText[i]
+    if (c >= '\x7F') {
+      c = c.charCodeAt(0).toString(16)
+      switch (c.length) {
+        case 2:
+          c = '\\u00' + c
+          break
+        case 3:
+          c = '\\u0' + c
+          break
+        default:
+          c = '\\u' + c
+          break
+      }
+    }
+    s += c
+  }
+  return s
+}
+
 // Prepare such as:
-//  - enable pgvector extension
-//  - drop any old 'embeddings_new' table
-//  - create a new 'embeddings_new' table
+//   - enable pgvector extension
+//   - drop any old 'embeddings_new' table
+//   - create a new 'embeddings_new' table
 const prepareDatabase = async () => {
   console.log(`---indexer: preparing database:`)
 
@@ -31,26 +110,10 @@ const prepareDatabase = async () => {
       url text,
       content text,
       tokens integer,
-      embedding vector(1536)
+      embedding vector(1024)
     );`
 
   console.log(`---indexer: preparing database... DONE!`)
-}
-
-// Postpare such as:
-const postpareDatabase = async () => {
-  console.log(`---indexer: postparing database:`)
-
-  console.log(`---indexer: rename table 'embeddings' to 'embeddings_old'`)
-  await sql`ALTER TABLE IF EXISTS embeddings RENAME TO embeddings_old;`
-
-  console.log(`---indexer: rename table 'embeddings_new' to 'embeddings'`)
-  await sql`ALTER TABLE IF EXISTS embeddings_new RENAME TO embeddings;`
-
-  console.log(`---indexer: drop table 'embeddings_old'`)
-  await sql`DROP TABLE IF EXISTS embeddings_old;`
-
-  console.log(`---indexer: postparing database... DONE!`)
 }
 
 // Scrape a list of URLs into chunks of 'chunk_length'.
@@ -66,7 +129,7 @@ const scrapeURLs = async (urls = URLS, chunk_length = 1000) => {
       const response = await fetch(url)
       const html = await response.text()
       const $ = cheerio.load(html)
-      const text = $('body').text()
+      const text = jsonToAscii($('body').text())
 
       const chunks_url = []
       let start = 0
@@ -103,7 +166,7 @@ const createEmbeddings = async (chunks = []) => {
         texts: JSON.stringify(texts),
         batch_size: 32,
         convert_to_numpy: false,
-        normalize_embeddings: true
+        normalize_embeddings: false
       }
     }
   )
@@ -118,16 +181,47 @@ const createEmbeddings = async (chunks = []) => {
   return chunks
 }
 
+const insertDatabase = async (chunks = []) => {
+  console.log(`---indexer: inserting ${chunks.length} chunks to the database:`)
+
+  await Promise.all(
+    chunks.map(
+      async (chunk) =>
+        sql`INSERT INTO embeddings_new (url, content, embedding) VALUES (${
+          chunk.url
+        }, ${chunk.content}, ${JSON.stringify(chunk.embedding)});`
+    )
+  )
+
+  console.log(`---indexer: inserting chunks to database... DONE!`)
+}
+
+// Deploy such as:
+//   - Switching out the previous table with the new for minimum downtime
+//   - Drop the old table
+const deployDatabase = async () => {
+  console.log(`---indexer: deploying database:`)
+
+  console.log(`---indexer: rename table 'embeddings' to 'embeddings_old'`)
+  await sql`ALTER TABLE IF EXISTS embeddings RENAME TO embeddings_old;`
+
+  console.log(`---indexer: rename table 'embeddings_new' to 'embeddings'`)
+  await sql`ALTER TABLE IF EXISTS embeddings_new RENAME TO embeddings;`
+
+  console.log(`---indexer: drop table 'embeddings_old'`)
+  await sql`DROP TABLE IF EXISTS embeddings_old;`
+
+  console.log(`---indexer: deploying database... DONE!`)
+}
+
 export default defineEventHandler(async (event) => {
   try {
     await prepareDatabase()
 
     const chunks = await scrapeURLs()
     await createEmbeddings(chunks)
-
-    // Todo: insert into DB
-
-    await postpareDatabase()
+    await insertDatabase(chunks)
+    await deployDatabase()
 
     const output = JSON.stringify(chunks)
     return { foo: output }
