@@ -9,8 +9,11 @@ export default {
   }),
   async mounted() {
     try {
-      const response = await fetch('/api/indexer', {
-        method: 'POST'
+      const response = await fetch('/api/retrieve', {
+        method: 'POST',
+        body: JSON.stringify({
+          text: 'How does pricing work?'
+        })
       })
       this.response = await response.json()
     } catch (e) {

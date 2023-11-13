@@ -196,6 +196,20 @@ const insertDatabase = async (chunks = []) => {
   console.log(`---indexer: inserting chunks to database... DONE!`)
 }
 
+// Create index for faster search.
+const createIndex = async () => {
+  // Calculate the index parameters according to best practices
+  let num_lists = chunks.length / 1000
+  if (num_lists < 10) num_lists = 10
+  if (chunks.length > 1000000) num_lists = Math.sqrt(chunks.length)
+
+  console.log(`---indexer: creating index, num_lists = ${num_lists}`)
+
+  await sql`CREATE INDEX ON embeddings_new USING ivfflat (embedding vector_cosine_ops) WITH (lists = ${num_lists});`
+
+  console.log(`---indexer: creating index... DONE!`)
+}
+
 // Deploy such as:
 //   - Switching out the previous table with the new for minimum downtime
 //   - Drop the old table
