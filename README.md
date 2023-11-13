@@ -18,16 +18,17 @@ We've build this API so that you can play with it on your own. It's running on V
 
 ## Usage
 
-| Input parameter | Type   | Description                                                  |
-| :-------------- | :----- | :----------------------------------------------------------- |
-| text            | String | The input text to retrieve similar documents for.            |
-| limit           | Number | The maximum number of retrieved documents (min: 1, max: 50). |
+| Input parameter | Type   | Description                                                   |
+| :-------------- | :----- | :------------------------------------------------------------ |
+| text            | String | The input text to retrieve similar documents for.             |
+| content_length  | Number | The character length of the documents (500 or 1000).          |
+| limit           | Number | The maximum number of retrieved documents (min: 1, max: 100). |
 
 cURL:
 
 ```shell
 curl -X POST \
--d '{"text": "How does pricing work?", "limit": 20}' \
+-d '{"text": "How does pricing work?", "content_length": 1000, "limit": 20}' \
 -H 'Content-Type: application/json' \
 https://replicate-retriever.vercel.app/api/retrieve
 ```
@@ -44,6 +45,7 @@ const response = await fetch(
     },
     body: JSON.stringify({
       text: 'How does pricing work?',
+      content_length: 1000,
       limit: 20
     })
   }

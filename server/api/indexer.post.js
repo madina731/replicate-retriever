@@ -109,6 +109,7 @@ const prepareDatabase = async () => {
       title text,
       url text,
       content text,
+      content_length integer,
       tokens integer,
       embedding vector(1024)
     );`
@@ -116,9 +117,9 @@ const prepareDatabase = async () => {
   console.log(`---indexer: preparing database... DONE!`)
 }
 
-// Scrape a list of URLs into chunks of 'chunk_length'.
+// Scrape a list of URLs into chunks of 'content_length'.
 // Use Promise.all() to parallelize the fetching.
-const scrapeURLs = async (urls = URLS, chunk_length = 1000) => {
+const scrapeURLs = async (urls = URLS, content_length = 1000) => {
   console.log(`---indexer: ${urls.length} URLs to scrape:`)
 
   const chunks = []
@@ -134,15 +135,17 @@ const scrapeURLs = async (urls = URLS, chunk_length = 1000) => {
       const chunks_url = []
       let start = 0
       while (start < text.length) {
-        const end = start + chunk_length
+        const end = start + content_length
         const content = text.slice(start, end)
-        chunks_url.push({ url, content })
+        chunks_url.push({ url, content, content_length })
         start = end
       }
 
       chunks.push(...chunks_url)
 
-      console.log(`---indexer: ${url}, ${chunks_url.length} chunks`)
+      console.log(
+        `---indexer: ${url}, ${chunks_url.length} chunks (content length: ${content_length})`
+      )
     })
   )
 
@@ -187,9 +190,11 @@ const insertDatabase = async (chunks = []) => {
   await Promise.all(
     chunks.map(
       async (chunk) =>
-        sql`INSERT INTO embeddings_new (url, content, embedding) VALUES (${
+        sql`INSERT INTO embeddings_new (url, content, content_length, embedding) VALUES (${
           chunk.url
-        }, ${chunk.content}, ${JSON.stringify(chunk.embedding)});`
+        }, ${chunk.content}, ${chunk.content_length}, ${JSON.stringify(
+          chunk.embedding
+        )});`
     )
   )
 
@@ -232,7 +237,13 @@ export default defineEventHandler(async (event) => {
   try {
     await prepareDatabase()
 
-    const chunks = await scrapeURLs()
+    // Create two sets of content lengths (1000, and 500)
+    const [chunks_1000, chunks_500] = await Promise.all([
+      scrapeURLs(URLS, 1000),
+      scrapeURLs(URLS, 500)
+    ])
+    const chunks = [...chunks_1000, ...chunks_500]
+
     await createEmbeddings(chunks)
     await insertDatabase(chunks)
     await deployDatabase()

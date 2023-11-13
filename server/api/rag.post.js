@@ -18,7 +18,8 @@ export default defineEventHandler(async (event) => {
         },
         body: JSON.stringify({
           text,
-          limit: 15
+          content_length: 500,
+          limit: 40
         })
       }
     )

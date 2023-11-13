@@ -30,10 +30,12 @@ const createEmbedding = async (text = '') => {
   return output[0]
 }
 
-const getDocuments = async (vector, limit = 20) => {
-  console.log(`---retrieve: get ${limit} closest documents`)
+const getDocuments = async (vector, content_length = 1000, limit = 20) => {
+  console.log(
+    `---retrieve: get ${limit} closest documents with content length ${content_length}`
+  )
   const { rows } =
-    await sql`SELECT content FROM embeddings ORDER BY embedding <=> ${JSON.stringify(
+    await sql`SELECT content FROM embeddings WHERE content_length = ${content_length} ORDER BY embedding <=> ${JSON.stringify(
       vector
     )} LIMIT ${limit};`
 
@@ -44,15 +46,16 @@ const getDocuments = async (vector, limit = 20) => {
 
 export default defineEventHandler(async (event) => {
   try {
-    let { text, limit } = await readBody(event)
+    let { text, content_length, limit } = await readBody(event)
 
     // Limit input params
     text = String(text)
+    content_length = content_length === 500 ? 500 : 1000
     if (limit < 1) limit = 1
-    if (limit > 50) limit = 50
+    if (limit > 100) limit = 100
 
     const vector = await createEmbedding(text)
-    const documents = await getDocuments(vector)
+    const documents = await getDocuments(vector, content_length, limit)
 
     return documents
   } catch (e) {
