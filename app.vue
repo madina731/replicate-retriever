@@ -1,25 +1,34 @@
 <template>
-  <pre>{{ response }}</pre>
+  <div id="app">
+    <textarea v-model="text" placeholder="Question..."></textarea>
+    <button @click="submit">Submit</button>
+    <div id="output">{{ output }}</div>
+  </div>
 </template>
 
 <script>
 export default {
   data: () => ({
-    response: 'Loading...'
+    text: 'How does pricing work?',
+    output: null
   }),
-  async mounted() {
-    try {
-      const response = await fetch('/api/retrieve', {
-        method: 'POST',
-        body: JSON.stringify({
-          text: 'How does pricing work?'
+  methods: {
+    async submit() {
+      try {
+        const response = await fetch('/api/rag', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            text: this.text
+          })
         })
-      })
-      this.response = await response.json()
-    } catch (e) {
-      this.response = `Error: ${e.message}`
+        this.output = await response.json()
+      } catch (e) {
+        this.response = `Error: ${e.message}`
+      }
     }
-    // window.location.href = 'https://github.com/replicate/replicate-retriever'
   }
 }
 </script>

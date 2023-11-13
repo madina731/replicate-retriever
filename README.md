@@ -19,7 +19,7 @@ We've build this API so that you can play with it on your own. It's running on V
 ## Usage
 
 | Input parameter | Type   | Description                                                  |
-| --------------- | ------ | ------------------------------------------------------------ |
+| :-------------- | :----- | :----------------------------------------------------------- |
 | text            | String | The input text to retrieve similar documents for.            |
 | limit           | Number | The maximum number of retrieved documents (min: 1, max: 50). |
 
@@ -39,6 +39,9 @@ const response = await fetch(
   'https://replicate-retriever.vercel.app/api/retrieve',
   {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify({
       text: 'How does pricing work?',
       limit: 20

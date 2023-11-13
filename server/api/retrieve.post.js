@@ -30,14 +30,14 @@ const createEmbedding = async (text = '') => {
   return output[0]
 }
 
-const getChunks = async (vector, limit = 10) => {
-  console.log(`---retrieve: get ${limit} closest chunks`)
+const getDocuments = async (vector, limit = 10) => {
+  console.log(`---retrieve: get ${limit} closest documents`)
   const { rows } =
     await sql`SELECT content FROM embeddings ORDER BY embedding <=> ${JSON.stringify(
       vector
     )} LIMIT ${limit};`
 
-  console.log(`---retrieve: got ${rows.length} closest chunks... DONE!`)
+  console.log(`---retrieve: got ${rows.length} closest documents... DONE!`)
 
   return rows.map((row) => row.content)
 }
@@ -52,7 +52,7 @@ export default defineEventHandler(async (event) => {
     if (limit > 50) limit = 50
 
     const vector = await createEmbedding(text)
-    const documents = await getChunks(vector)
+    const documents = await getDocuments(vector)
 
     return documents
   } catch (e) {
