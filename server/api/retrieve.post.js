@@ -44,8 +44,7 @@ const getChunks = async (vector, limit = 10) => {
 
 export default defineEventHandler(async (event) => {
   try {
-    const body = await readBody(event)
-    let { text, limit } = JSON.parse(body)
+    let { text, limit } = await readBody(event)
 
     // Limit input params
     text = String(text)
@@ -55,7 +54,7 @@ export default defineEventHandler(async (event) => {
     const vector = await createEmbedding(text)
     const documents = await getChunks(vector)
 
-    return { documents, limit }
+    return documents
   } catch (e) {
     console.log('--- error: ', e)
 
