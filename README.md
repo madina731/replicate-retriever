@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/retriever_logo.png" height=150>
+  <img src="public/retriever_logo.png" height=150>
 </p>
 
 ## <div align="center"><b>Retriever</b> — the documentation embedding and retrieval API</div>

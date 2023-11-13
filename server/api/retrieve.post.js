@@ -30,7 +30,7 @@ const createEmbedding = async (text = '') => {
   return output[0]
 }
 
-const getDocuments = async (vector, limit = 10) => {
+const getDocuments = async (vector, limit = 20) => {
   console.log(`---retrieve: get ${limit} closest documents`)
   const { rows } =
     await sql`SELECT content FROM embeddings ORDER BY embedding <=> ${JSON.stringify(

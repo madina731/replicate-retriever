@@ -4506,6 +4506,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"marked@npm:^10.0.0":
+  version: 10.0.0
+  resolution: "marked@npm:10.0.0"
+  bin:
+    marked: bin/marked.js
+  checksum: 343c2c9a1cd66dacb59a269e93cea75901c98f4fb993078435628e5c79a76c9caaa9930de32bf30a5520f978a4c37098b7f557b2f45104d38a0d9d58dcc9bf9b
+  languageName: node
+  linkType: hard
+
 "mdn-data@npm:2.0.28":
   version: 2.0.28
   resolution: "mdn-data@npm:2.0.28"
@@ -5123,8 +5132,10 @@ __metadata:
     "@nuxt/devtools": latest
     "@vercel/postgres": ^0.5.1
     cheerio: ^1.0.0-rc.12
+    marked: ^10.0.0
     nuxt: ^3.8.1
     replicate: ^0.21.1
+    replicate-webhook-proxy: ^0.0.2
     vue: ^3.3.8
     vue-router: ^4.2.5
   languageName: unknown
@@ -6064,6 +6075,15 @@ __metadata:
   dependencies:
     redis-errors: ^1.0.0
   checksum: 89290ae530332f2ae37577647fa18208d10308a1a6ba750b9d9a093e7398f5e5253f19855b64c98757f7129cccce958e4af2573fdc33bad41405f87f1943459a
+  languageName: node
+  linkType: hard
+
+"replicate-webhook-proxy@npm:^0.0.2":
+  version: 0.0.2
+  resolution: "replicate-webhook-proxy@npm:0.0.2"
+  dependencies:
+    ws: ^8.13.0
+  checksum: 001bd8ca2fbf7a1662fd29dc0bcc98375c752c8671eb70452c659b12eee4fcd50029016a28dc2c94b804b5b337bdc032beecef2a93666f4de336c22c17ba2933
   languageName: node
   linkType: hard
 
@@ -7464,7 +7484,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ws@npm:8.14.2, ws@npm:^8.14.2":
+"ws@npm:8.14.2, ws@npm:^8.13.0, ws@npm:^8.14.2":
   version: 8.14.2
   resolution: "ws@npm:8.14.2"
   peerDependencies:

@@ -18,6 +18,8 @@
   "dependencies": {
     "@vercel/postgres": "^0.5.1",
     "cheerio": "^1.0.0-rc.12",
-    "replicate": "^0.21.1"
+    "marked": "^10.0.0",
+    "replicate": "^0.21.1",
+    "replicate-webhook-proxy": "^0.0.2"
   }
 }

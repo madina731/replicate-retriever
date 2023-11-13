@@ -26,11 +26,12 @@ export default defineEventHandler(async (event) => {
     console.log('---rag: embedding input text... DONE!')
 
     console.log('---rag: creating prediction')
-    const output = await replicate.run(
-      'mistralai/mistral-7b-instruct-v0.1:83b6a56e7c828e667f21fd596c338fd4f0039b46bcfa18d973e8e70e455fda70',
-      {
-        input: {
-          prompt: `[INST]
+    const prediction = await replicate.predictions.create({
+      // mistralai/mistral-7b-instruct-v0.1
+      version:
+        '83b6a56e7c828e667f21fd596c338fd4f0039b46bcfa18d973e8e70e455fda70',
+      input: {
+        prompt: `[INST]
 You are a very enthusiastic Replicate representative who loves to help people! Your goal is to answer the question that will help the user use Replicate. You will be given a USER_PROMPT, and a series of DOCUMENTATION_PAGES. You will respond with an answer.
 
 If you are unsure and the answer is not explicitly written in the documentation, say "Sorry, I don\'t know how to help with that.". Do not answer with something that is not written in the documentation.
@@ -42,14 +43,16 @@ DOCUMENTATION_PAGES: ${documents.join('\n')}
 ANSWER:
 
 [/INST]`,
-          temperature: 0.75,
-          max_new_tokens: 2048
-        }
-      }
-    )
+        temperature: 0.75,
+        max_new_tokens: 2048
+      },
+      webhook:
+        'https://r3swiuknhh.execute-api.eu-west-1.amazonaws.com/prod/webhook?key=8r73h487rh378fg3',
+      webhook_events_filter: ['output', 'completed']
+    })
     console.log('---rag: creating prediction... DONE!')
 
-    return output
+    return prediction
   } catch (e) {
     console.log('--- error: ', e)
 
