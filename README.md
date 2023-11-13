@@ -16,12 +16,6 @@ This API handles the retrieval part in RAG; we've pre-chunked our online documen
 
 We've build this API so that you can play with it on your own. It's running on Vercel Serverelss, with a Vercel PostgreSQL vector database.
 
-### Vercel PostgreSQL
-
-1. Deploy the project to Vercel.
-2. Under "Storage", create a new PostgreSQL database.
-3. Pull down credentials after you've linked the Vercel project locally: `vercel link` and `vercel env pull .env`.
-
 ## Usage
 
 | Input parameter | Type   | Description                                                  |
@@ -55,3 +49,11 @@ const documents = await response.json()
 ```
 
 The response is a list of documents.
+
+## Develop
+
+### Vercel PostgreSQL
+
+1. Deploy the project to Vercel.
+2. Under "Storage", create a new PostgreSQL database.
+3. Pull down credentials after you've linked the Vercel project locally: `vercel link` and `vercel env pull .env`.
