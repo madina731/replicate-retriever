@@ -10,7 +10,9 @@ export default defineEventHandler(async (event) => {
 
     console.log('---rag: embedding input text: ', text)
     const response = await fetch(
-      'https://replicate-retriever.vercel.app/api/retrieve',
+      process.env.VERCEL_ENV === 'development'
+        ? 'http://localhost:3000/api/retrieve'
+        : 'https://replicate-retriever.vercel.app/api/retrieve',
       {
         method: 'POST',
         headers: {
@@ -18,8 +20,8 @@ export default defineEventHandler(async (event) => {
         },
         body: JSON.stringify({
           text,
-          content_length: 500,
-          limit: 40
+          content_length: 1000,
+          limit: 10
         })
       }
     )
@@ -27,30 +29,27 @@ export default defineEventHandler(async (event) => {
     console.log('---rag: embedding input text... DONE!')
 
     console.log('---rag: creating prediction')
+
     const prediction = await replicate.predictions.create({
-      // mistralai/mistral-7b-instruct-v0.1
+      // meta/llama-2-70b-chat
       version:
-        '83b6a56e7c828e667f21fd596c338fd4f0039b46bcfa18d973e8e70e455fda70',
+        '02e509c789964a7ea8736978a43525956ef40397be9033abf9fd2badfe68c9e3',
       input: {
-        prompt: `[INST]
-You are a very enthusiastic Replicate representative who loves to help people! Your goal is to answer the question that will help the user use Replicate. You will be given a USER_PROMPT, and a series of DOCUMENTATION_PAGES. You will respond with an answer.
-
-If you are unsure and the answer is not explicitly written in the documentation, say "Sorry, I don\'t know how to help with that.". Do not answer with something that is not written in the documentation.
-
-USER_PROMPT: ${text}
-
-DOCUMENTATION_PAGES: ${documents.join('\n')}
-
-ANSWER:
-
-[/INST]`,
-        temperature: 0.75,
+        system_prompt: ``,
+        prompt: `[INST] You are a very enthusiastic Replicate representative who loves to help people! Given the following CONTEXT from the Replicate documentation, answer the QUESTION using only that information. If you are unsure, if the answer is not explicitly written in the documentation, a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. Do not answer with something that is not written in the documentation. [/INST]
+[INST] CONTEXT: You can use Replicate to run machine learning models in the cloud from your own code, without having to set up any servers. Our community has published hundreds of open-source models that you can run, or you can run your own models.
+QUESTION: What is Replicate? [/INST]
+Replicate lets you run machine learning models with a cloud API, without having to understand the intricacies of machine learning or manage your own infrastructure. You can run open-source models that other people have published, or package and publish your own models. Those models can be public or private.
+[INST] CONTEXT: ${documents.join('\n')}
+QUESTION: ${text} [/INST]`,
+        temperature: 0.5,
         max_new_tokens: 2048
       },
       webhook:
         'https://r3swiuknhh.execute-api.eu-west-1.amazonaws.com/prod/webhook?key=8r73h487rh378fg3',
       webhook_events_filter: ['output', 'completed']
     })
+
     console.log('---rag: creating prediction... DONE!')
 
     return prediction

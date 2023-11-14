@@ -4,7 +4,7 @@
       <img src="/retriever_logo.png"
     /></a>
     <textarea v-model="text" placeholder="Question..."></textarea>
-    <button @click="submit">Submit</button>
+    <button @click="submit">{{ loading ? 'Loading...' : 'Submit' }}</button>
     <div v-if="output !== ''" v-html="markdownToHtml(output)" id="output"></div>
   </div>
 </template>
@@ -17,6 +17,7 @@ const client = rwp('8r73h487rh378fg3')
 
 export default {
   data: () => ({
+    loading: false,
     text: 'How does pricing work?',
     output: ''
   }),
@@ -26,6 +27,7 @@ export default {
     },
     async submit() {
       try {
+        this.loading = true
         this.output = ''
         const response = await fetch('/api/rag', {
           method: 'POST',
@@ -37,6 +39,7 @@ export default {
           })
         })
       } catch (e) {
+        this.loading = false
         this.response = `Error: ${e.message}`
       }
     }
@@ -44,6 +47,7 @@ export default {
   mounted() {
     client.on('message', (event) => {
       this.output = event.data.body.output.join('')
+      this.loading = false
     })
   }
 }
