@@ -161,8 +161,8 @@ const createEmbeddings = async (chunks = []) => {
   // Replacing content newlines with spaces for better results
   const texts = chunks.map((chunk) => chunk.content.replace(/\n/g, ' '))
 
-  console.log(`---indexer: created prediction`)
-  
+  console.log(`---indexer: create prediction`)
+
   const input = {
     texts: JSON.stringify(texts),
     batch_size: 32,
@@ -172,17 +172,18 @@ const createEmbeddings = async (chunks = []) => {
   let output
 
   if (process.env.USE_REPLICATE_DEPLOYMENTS) {
+    console.log(`---retrieve: using deployment`)
     let prediction = await replicate.deployments.predictions.create(
-      "replicate",
-      "retriever-embeddings",
-      {input}
+      'replicate',
+      'retriever-embeddings',
+      { input }
     )
     prediction = await replicate.wait(prediction)
     output = prediction.output
   } else {
     output = await replicate.run(
       'nateraw/bge-large-en-v1.5:9cf9f015a9cb9c61d1a2610659cdac4a4ca222f2d3707a68517b18c198a9add1',
-      {input}
+      { input }
     )
   }
 
@@ -191,7 +192,7 @@ const createEmbeddings = async (chunks = []) => {
     chunks[i].embedding = value
   }
 
-  console.log(`---indexer: prediction... DONE!`)
+  console.log(`---indexer: create prediction... DONE!`)
 
   return chunks
 }

@@ -12,7 +12,7 @@ const createEmbedding = async (text = '') => {
   // Replacing content newlines with spaces for better results
   text = text.replace(/\n/g, ' ')
 
-  console.log(`---retrieve: created prediction`)
+  console.log(`---retrieve: create prediction`)
   const input = {
     texts: JSON.stringify([text]),
     batch_size: 1,
@@ -22,6 +22,7 @@ const createEmbedding = async (text = '') => {
   let output
 
   if (process.env.USE_REPLICATE_DEPLOYMENTS) {
+    console.log(`---retrieve: using deployment`)
     let prediction = await replicate.deployments.predictions.create(
       'replicate',
       'retriever-embeddings',
@@ -36,7 +37,7 @@ const createEmbedding = async (text = '') => {
     )
   }
 
-  console.log(`---retrieve: prediction... DONE!`)
+  console.log(`---retrieve: create prediction... DONE!`)
 
   return output[0]
 }
