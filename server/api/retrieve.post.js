@@ -13,17 +13,28 @@ const createEmbedding = async (text = '') => {
   text = text.replace(/\n/g, ' ')
 
   console.log(`---retrieve: created prediction`)
-  const output = await replicate.run(
-    'nateraw/bge-large-en-v1.5:9cf9f015a9cb9c61d1a2610659cdac4a4ca222f2d3707a68517b18c198a9add1',
-    {
-      input: {
-        texts: JSON.stringify([text]),
-        batch_size: 1,
-        convert_to_numpy: false,
-        normalize_embeddings: false
-      }
-    }
-  )
+  const input = {
+    texts: JSON.stringify([text]),
+    batch_size: 1,
+    convert_to_numpy: false,
+    normalize_embeddings: false
+  }
+  let output
+
+  if (process.env.USE_REPLICATE_DEPLOYMENTS) {
+    let prediction = await replicate.deployments.predictions.create(
+      'replicate',
+      'retriever-embeddings',
+      { input }
+    )
+    prediction = await replicate.wait(prediction)
+    output = prediction.output
+  } else {
+    output = await replicate.run(
+      'nateraw/bge-large-en-v1.5:9cf9f015a9cb9c61d1a2610659cdac4a4ca222f2d3707a68517b18c198a9add1',
+      { input }
+    )
+  }
 
   console.log(`---retrieve: prediction... DONE!`)
 

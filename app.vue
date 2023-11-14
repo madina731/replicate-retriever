@@ -27,7 +27,7 @@ export default {
     async submit() {
       try {
         this.output = ''
-        const response = await fetch('/api/indexer', {
+        const response = await fetch('/api/rag', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
