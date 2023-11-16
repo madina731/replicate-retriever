@@ -13,7 +13,21 @@
 import { marked } from 'marked'
 import rwp from 'replicate-webhook-proxy'
 
-const client = rwp('8r73h487rh378fg3')
+const makeid = (length) => {
+  let result = ''
+  const characters =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  const charactersLength = characters.length
+  let counter = 0
+  while (counter < length) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength))
+    counter += 1
+  }
+  return result
+}
+
+const ws_id = makeid(10)
+const client = rwp(ws_id)
 
 export default {
   data: () => ({
@@ -35,7 +49,8 @@ export default {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            text: this.text
+            text: this.text,
+            ws_id
           })
         })
       } catch (e) {

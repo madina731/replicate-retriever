@@ -6,7 +6,7 @@ const replicate = new Replicate({
 
 export default defineEventHandler(async (event) => {
   try {
-    let { text } = await readBody(event)
+    let { text, ws_id } = await readBody(event)
 
     console.log('---rag: embedding input text: ', text)
     const response = await fetch(
@@ -45,8 +45,7 @@ QUESTION: ${text} [/INST]`,
         temperature: 0.5,
         max_new_tokens: 2048
       },
-      webhook:
-        'https://r3swiuknhh.execute-api.eu-west-1.amazonaws.com/prod/webhook?key=8r73h487rh378fg3',
+      webhook: `https://r3swiuknhh.execute-api.eu-west-1.amazonaws.com/prod/webhook?key=${ws_id}`,
       webhook_events_filter: ['output', 'completed']
     })
 
