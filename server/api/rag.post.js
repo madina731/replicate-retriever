@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   try {
     let { text, ws_id } = await readBody(event)
 
-    console.log('---rag: embedding input text: ', text)
+    console.log('--- log (rag): embedding input text: ', text)
     const response = await fetch(
       process.env.VERCEL_ENV === 'development'
         ? 'http://localhost:3000/api/retrieve'
@@ -26,9 +26,9 @@ export default defineEventHandler(async (event) => {
       }
     )
     const documents = await response.json()
-    console.log('---rag: embedding input text... DONE!')
+    console.log('--- log (rag): embedding input text... DONE!')
 
-    console.log('---rag: creating prediction')
+    console.log('--- log (rag): creating prediction')
 
     const prediction = await replicate.predictions.create({
       // meta/llama-2-70b-chat
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
 [INST] CONTEXT: You can use Replicate to run machine learning models in the cloud from your own code, without having to set up any servers. Our community has published hundreds of open-source models that you can run, or you can run your own models.
 QUESTION: What is Replicate? [/INST]
 Replicate lets you run machine learning models with a cloud API, without having to understand the intricacies of machine learning or manage your own infrastructure. You can run open-source models that other people have published, or package and publish your own models. Those models can be public or private.
-[INST] CONTEXT: ${documents.join('\n')}
+[INST] CONTEXT: ${documents.map((document) => document.content).join('\n')}
 QUESTION: ${text} [/INST]`,
         temperature: 0.5,
         max_new_tokens: 2048
@@ -49,11 +49,12 @@ QUESTION: ${text} [/INST]`,
       webhook_events_filter: ['output', 'completed']
     })
 
-    console.log('---rag: creating prediction... DONE!')
+    console.log('--- log (rag): creating prediction... DONE!')
+    console.log('--- log (rag): prediction ID:', prediction.id)
 
-    return prediction
+    return documents
   } catch (e) {
-    console.log('--- error: ', e)
+    console.log('--- error (rag): ', e)
 
     throw createError({
       statusCode: 500,

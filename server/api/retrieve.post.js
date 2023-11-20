@@ -7,12 +7,12 @@ const replicate = new Replicate({
 
 // Create embedding using Replicate.
 const createEmbedding = async (text = '') => {
-  console.log(`---retrieve: embedding text with length ${text.length}`)
+  console.log(`--- log (retrieve): embedding text with length ${text.length}`)
 
   // Replacing content newlines with spaces for better results
   text = text.replace(/\n/g, ' ')
 
-  console.log(`---retrieve: create prediction`)
+  console.log(`--- log (retrieve): create prediction`)
   const input = {
     texts: JSON.stringify([text]),
     batch_size: 1,
@@ -22,7 +22,7 @@ const createEmbedding = async (text = '') => {
   let output
 
   if (process.env.USE_REPLICATE_DEPLOYMENTS) {
-    console.log(`---retrieve: using deployment`)
+    console.log(`--- log (retrieve): using deployment`)
     let prediction = await replicate.deployments.predictions.create(
       'replicate',
       'retriever-embeddings',
@@ -37,23 +37,25 @@ const createEmbedding = async (text = '') => {
     )
   }
 
-  console.log(`---retrieve: create prediction... DONE!`)
+  console.log(`--- log (retrieve): create prediction... DONE!`)
 
   return output[0]
 }
 
 const getDocuments = async (vector, content_length = 1000, limit = 20) => {
   console.log(
-    `---retrieve: get ${limit} closest documents with content length ${content_length}`
+    `--- log (retrieve): get ${limit} closest documents with content length ${content_length}`
   )
   const { rows } =
-    await sql`SELECT content FROM embeddings WHERE content_length = ${content_length} ORDER BY embedding <=> ${JSON.stringify(
+    await sql`SELECT title, url, content FROM embeddings WHERE content_length = ${content_length} ORDER BY embedding <=> ${JSON.stringify(
       vector
     )} LIMIT ${limit};`
 
-  console.log(`---retrieve: got ${rows.length} closest documents... DONE!`)
+  console.log(
+    `--- log (retrieve): got ${rows.length} closest documents... DONE!`
+  )
 
-  return rows.map((row) => row.content)
+  return rows // rows.map((row) => row.content)
 }
 
 export default defineEventHandler(async (event) => {
@@ -71,7 +73,7 @@ export default defineEventHandler(async (event) => {
 
     return documents
   } catch (e) {
-    console.log('--- error: ', e)
+    console.log('---  (retrieve): ', e)
 
     throw createError({
       statusCode: 500,

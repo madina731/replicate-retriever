@@ -6,6 +6,14 @@
     <textarea v-model="text" placeholder="Question..."></textarea>
     <button @click="submit">{{ loading ? 'Loading...' : 'Submit' }}</button>
     <div v-if="output !== ''" v-html="markdownToHtml(output)" id="output"></div>
+    <div v-if="output !== '' && deduped_documents.length > 0" id="sources">
+      <b>Sources:</b>
+      <ol>
+        <li v-for="(item, index) in deduped_documents" :key="`source-${index}`">
+          <a :href="item.url" tager="_new">{{ item.title }}</a>
+        </li>
+      </ol>
+    </div>
   </div>
 </template>
 
@@ -33,8 +41,17 @@ export default {
   data: () => ({
     loading: false,
     text: 'How does pricing work?',
-    output: ''
+    output: '',
+    documents: []
   }),
+  computed: {
+    deduped_documents() {
+      return this.documents.filter(
+        (value, index, self) =>
+          index === self.findIndex((v) => v.title === value.title)
+      )
+    }
+  },
   methods: {
     markdownToHtml(str) {
       return marked.parse(str)
@@ -53,6 +70,7 @@ export default {
             ws_id
           })
         })
+        this.documents = await response.json()
       } catch (e) {
         this.loading = false
         this.response = `Error: ${e.message}`
@@ -128,5 +146,37 @@ button {
   padding: 8px;
   background: #464646;
   color: #f3f3f3;
+}
+
+#sources {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  font-family: monospace;
+  color: #171717;
+  white-space: pre-wrap;
+  background: rgb(255, 247, 145);
+}
+
+#sources ol {
+  margin: 0;
+  padding: 0 0.5rem 0.5rem 2.5rem;
+}
+
+#sources ol li {
+  padding: 0.5rem 0 0;
+}
+
+#sources ol li a {
+  color: #000;
+  text-decoration: underline;
+  text-decoration-color: #00000073;
+  text-decoration-thickness: 0.6px;
+  text-underline-offset: 0.15em;
+}
+
+#sources ol li a:hover {
+  text-decoration-color: #000;
+  text-decoration-thickness: 2px;
 }
 </style>

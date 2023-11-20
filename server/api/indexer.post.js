@@ -17,12 +17,15 @@ const URLS = [
   'https://hexdocs.pm/replicate/readme.html',
   'https://replicate.com/docs/guides/push-a-model',
   'https://replicate.com/docs/how-does-replicate-work#private-models',
+  'https://replicate.com/docs/deployments',
+  'https://replicate.com/docs/fine-tuning',
   'https://replicate.com/docs/guides/fine-tune-a-language-model',
   'https://replicate.com/docs/guides/fine-tune-an-image-model',
   'https://replicate.com/docs/guides/get-a-gpu-machine',
   'https://replicate.com/docs/guides/push-stable-diffusion',
   'https://raw.githubusercontent.com/replicate/setup-cog/main/README.md',
   'https://replicate.com/docs/how-does-replicate-work',
+  'https://replicate.com/docs/billing',
   'https://replicate.com/showcase',
   'https://replicate.com/docs/webhooks',
   'https://replicate.com/docs/streaming',
@@ -64,8 +67,18 @@ const URLS = [
   'https://replicate.com/blog/cutting-prices-in-half',
   'https://replicate.com/blog/painting-with-words-a-history-of-text-to-image-ai',
   'https://replicate.com/blog/fine-tune-cold-boots',
+  'https://replicate.com/blog/animatediff-interpolator',
+  'https://replicate.com/blog/run-mistral-7b-with-api',
+  'https://replicate.com/blog/llama-2-grammars',
+  'https://replicate.com/blog/fine-tune-musicgen',
+  'https://replicate.com/blog/how-to-use-rag-with-chromadb-and-mistral-7b-instruct',
+  'https://replicate.com/blog/run-latent-consistency-model-on-mac',
+  'https://replicate.com/blog/generate-music-from-chord-progressions-musicgen-chord',
+  'https://replicate.com/blog/run-bge-embedding-models',
   'https://replicate.com/changelog'
 ]
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const jsonToAscii = (jsonText) => {
   var s = ''
@@ -96,12 +109,12 @@ const jsonToAscii = (jsonText) => {
 //   - drop any old 'embeddings_new' table
 //   - create a new 'embeddings_new' table
 const prepareDatabase = async () => {
-  console.log(`---indexer: preparing database:`)
+  console.log(`--- log (indexer): preparing database:`)
 
-  console.log(`---indexer: ensure pgvector is enabled`)
+  console.log(`--- log (indexer): ensure pgvector is enabled`)
   await sql`CREATE EXTENSION IF NOT EXISTS vector;`
 
-  console.log(`---indexer: create new table 'embeddings_new'`)
+  console.log(`--- log (indexer): create new table 'embeddings_new'`)
   await sql`DROP TABLE IF EXISTS embeddings_new;`
   await sql`
     CREATE TABLE embeddings_new (
@@ -114,13 +127,13 @@ const prepareDatabase = async () => {
       embedding vector(1024)
     );`
 
-  console.log(`---indexer: preparing database... DONE!`)
+  console.log(`--- log (indexer): preparing database... DONE!`)
 }
 
 // Scrape a list of URLs into chunks of 'content_length'.
 // Use Promise.all() to parallelize the fetching.
 const scrapeURLs = async (urls = URLS, content_length = 1000) => {
-  console.log(`---indexer: ${urls.length} URLs to scrape:`)
+  console.log(`--- log (indexer): ${urls.length} URLs to scrape:`)
 
   const chunks = []
 
@@ -130,6 +143,7 @@ const scrapeURLs = async (urls = URLS, content_length = 1000) => {
       const response = await fetch(url)
       const html = await response.text()
       const $ = cheerio.load(html)
+      const title = $('title').text()
       const text = jsonToAscii($('body').text())
 
       const chunks_url = []
@@ -137,31 +151,31 @@ const scrapeURLs = async (urls = URLS, content_length = 1000) => {
       while (start < text.length) {
         const end = start + content_length
         const content = text.slice(start, end)
-        chunks_url.push({ url, content, content_length })
+        chunks_url.push({ title, url, content, content_length })
         start = end
       }
 
       chunks.push(...chunks_url)
 
       console.log(
-        `---indexer: ${url}, ${chunks_url.length} chunks (content length: ${content_length})`
+        `--- log (indexer): ${url}, ${chunks_url.length} chunks (content length: ${content_length})`
       )
     })
   )
 
-  console.log(`---indexer: URLs to scrape... DONE!`)
+  console.log(`--- log (indexer): URLs to scrape... DONE!`)
 
   return chunks
 }
 
 // Create embeddings using Replicate and mend back output to the original array.
 const createEmbeddings = async (chunks = []) => {
-  console.log(`---indexer: ${chunks.length} chunks to embed:`)
+  console.log(`--- log (indexer): ${chunks.length} chunks to embed:`)
 
   // Replacing content newlines with spaces for better results
   const texts = chunks.map((chunk) => chunk.content.replace(/\n/g, ' '))
 
-  console.log(`---indexer: create prediction`)
+  console.log(`--- log (indexer): create prediction`)
 
   const input = {
     texts: JSON.stringify(texts),
@@ -172,7 +186,7 @@ const createEmbeddings = async (chunks = []) => {
   let output
 
   if (process.env.USE_REPLICATE_DEPLOYMENTS) {
-    console.log(`---retrieve: using deployment`)
+    console.log(`--- log (indexer): using deployment`)
     let prediction = await replicate.deployments.predictions.create(
       'replicate',
       'retriever-embeddings',
@@ -192,26 +206,43 @@ const createEmbeddings = async (chunks = []) => {
     chunks[i].embedding = value
   }
 
-  console.log(`---indexer: create prediction... DONE!`)
+  console.log(`--- log (indexer): create prediction... DONE!`)
 
   return chunks
 }
 
 const insertDatabase = async (chunks = []) => {
-  console.log(`---indexer: inserting ${chunks.length} chunks to the database:`)
+  console.log(
+    `--- log (indexer): inserting ${chunks.length} chunks to the database:`
+  )
 
+  // Below will timeout, may need chunking of insert ops
+  /*
   await Promise.all(
     chunks.map(
       async (chunk) =>
-        sql`INSERT INTO embeddings_new (url, content, content_length, embedding) VALUES (${
-          chunk.url
-        }, ${chunk.content}, ${chunk.content_length}, ${JSON.stringify(
-          chunk.embedding
-        )});`
+        sql`INSERT INTO embeddings_new (title, url, content, content_length, embedding) VALUES (${
+          chunk.title
+        }, ${chunk.url}, ${chunk.content}, ${
+          chunk.content_length
+        }, ${JSON.stringify(chunk.embedding)});`
     )
   )
+  */
 
-  console.log(`---indexer: inserting chunks to database... DONE!`)
+  // Very innefficient but doesn't time-out the DB
+  let i = 0
+  for (const chunk of chunks) {
+    await sql`INSERT INTO embeddings_new (title, url, content, content_length, embedding) VALUES (${
+      chunk.title
+    }, ${chunk.url}, ${chunk.content}, ${
+      chunk.content_length
+    }, ${JSON.stringify(chunk.embedding)});`
+    console.log(`--- log (indexer): inserted chunk #${i}`)
+    i++
+  }
+
+  console.log(`--- log (indexer): inserting chunks to database... DONE!`)
 }
 
 // Create index for faster search.
@@ -221,29 +252,33 @@ const createIndex = async () => {
   if (num_lists < 10) num_lists = 10
   if (chunks.length > 1000000) num_lists = Math.sqrt(chunks.length)
 
-  console.log(`---indexer: creating index, num_lists = ${num_lists}`)
+  console.log(`--- log (indexer): creating index, num_lists = ${num_lists}`)
 
   await sql`CREATE INDEX ON embeddings_new USING ivfflat (embedding vector_cosine_ops) WITH (lists = ${num_lists});`
 
-  console.log(`---indexer: creating index... DONE!`)
+  console.log(`--- log (indexer): creating index... DONE!`)
 }
 
 // Deploy such as:
 //   - Switching out the previous table with the new for minimum downtime
 //   - Drop the old table
 const deployDatabase = async () => {
-  console.log(`---indexer: deploying database:`)
+  console.log(`--- log (indexer): deploying database:`)
 
-  console.log(`---indexer: rename table 'embeddings' to 'embeddings_old'`)
+  console.log(
+    `--- log (indexer): rename table 'embeddings' to 'embeddings_old'`
+  )
   await sql`ALTER TABLE IF EXISTS embeddings RENAME TO embeddings_old;`
 
-  console.log(`---indexer: rename table 'embeddings_new' to 'embeddings'`)
+  console.log(
+    `--- log (indexer): rename table 'embeddings_new' to 'embeddings'`
+  )
   await sql`ALTER TABLE IF EXISTS embeddings_new RENAME TO embeddings;`
 
-  console.log(`---indexer: drop table 'embeddings_old'`)
+  console.log(`--- log (indexer): drop table 'embeddings_old'`)
   await sql`DROP TABLE IF EXISTS embeddings_old;`
 
-  console.log(`---indexer: deploying database... DONE!`)
+  console.log(`--- log (indexer): deploying database... DONE!`)
 }
 
 export default defineEventHandler(async (event) => {
@@ -261,10 +296,9 @@ export default defineEventHandler(async (event) => {
     await insertDatabase(chunks)
     await deployDatabase()
 
-    const output = JSON.stringify(chunks)
-    return { foo: output }
+    return
   } catch (e) {
-    console.log('--- error: ', e)
+    console.log('--- error (indexer): ', e)
 
     throw createError({
       statusCode: 500,
