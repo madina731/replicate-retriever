@@ -53,7 +53,15 @@ const response = await fetch(
 const documents = await response.json()
 ```
 
-The response is a list of documents.
+The response is a list of documents in the following form:
+
+```json
+[
+  { "title": "<title>", "url": "<url", "content": "<content>" },
+  { "title": "<title>", "url": "<url", "content": "<content>" },
+  ...
+]
+```
 
 ## Develop
 
