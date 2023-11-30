@@ -43,30 +43,47 @@ const createEmbedding = async (text = '') => {
 }
 
 const getDocuments = async (vector, content_length = 1000, limit = 20) => {
-  console.log(
-    `--- log (retrieve): get ${limit} closest documents with content length ${content_length}`
-  )
-  const { rows } =
-    await sql`SELECT title, url, content FROM embeddings WHERE content_length = ${content_length} ORDER BY embedding <=> ${JSON.stringify(
-      vector
-    )} LIMIT ${limit};`
+  let rows
+  if (content_length > 0) {
+    console.log(
+      `--- log (retrieve): get ${limit} closest documents with content length ${content_length}`
+    )
+    const result =
+      await sql`SELECT title, url, content FROM embeddings WHERE content_length = ${content_length} ORDER BY embedding <=> ${JSON.stringify(
+        vector
+      )} LIMIT ${limit};`
+    rows = result.rows
+  } else {
+    console.log(
+      `--- log (retrieve): get ${limit} closest documents with content length 500, discarding content`
+    )
+    const result =
+      await sql`SELECT title, url FROM embeddings WHERE content_length = 500 ORDER BY embedding <=> ${JSON.stringify(
+        vector
+      )} LIMIT ${limit};`
+    rows = result.rows
+  }
 
   console.log(
     `--- log (retrieve): got ${rows.length} closest documents... DONE!`
   )
 
-  return rows // rows.map((row) => row.content)
+  return rows
 }
 
 export default defineEventHandler(async (event) => {
   try {
     let { text, content_length, limit } = await readBody(event)
 
-    // Limit input params
     text = String(text)
-    content_length = content_length === 500 ? 500 : 1000
-    if (limit < 1) limit = 1
-    if (limit > 100) limit = 100
+    if (content_length > 500) {
+      content_length = 1000
+    } else if (content_length > 0) {
+      content_length = 500
+    } else {
+      content_length = 0
+    }
+    limit = Math.min(Math.max(limit, 1), 100)
 
     const vector = await createEmbedding(text)
     const documents = await getDocuments(vector, content_length, limit)
