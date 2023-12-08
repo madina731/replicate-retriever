@@ -75,6 +75,11 @@ const URLS = [
   'https://replicate.com/blog/run-latent-consistency-model-on-mac',
   'https://replicate.com/blog/generate-music-from-chord-progressions-musicgen-chord',
   'https://replicate.com/blog/run-bge-embedding-models',
+  'https://replicate.com/blog/replicate-scaffold',
+  'https://replicate.com/blog/run-yi-chat-with-api',
+  'https://replicate.com/blog/series-b',
+  'https://replicate.com/blog/how-to-create-an-ai-narrator',
+  'https://replicate.com/blog/how-to-tune-a-realistic-voice-clone',
   'https://replicate.com/changelog'
 ]
 
@@ -170,39 +175,56 @@ const scrapeURLs = async (urls = URLS, content_length = 1000) => {
 
 // Create embeddings using Replicate and mend back output to the original array.
 const createEmbeddings = async (chunks = []) => {
-  console.log(`--- log (indexer): ${chunks.length} chunks to embed:`)
+  console.log(`--- log (indexer): ${chunks.length} chunks to embed`)
 
   // Replacing content newlines with spaces for better results
   const texts = chunks.map((chunk) => chunk.content.replace(/\n/g, ' '))
 
-  console.log(`--- log (indexer): create prediction`)
+  // Create bucket of chunks so that prediction input doesn't get too large
 
-  const input = {
-    texts: JSON.stringify(texts),
-    batch_size: 32,
-    convert_to_numpy: false,
-    normalize_embeddings: false
+  const bucket_size = 500
+  const buckets = []
+  while (texts.length > 0) {
+    buckets.push(texts.splice(0, bucket_size))
   }
-  let output
 
-  if (process.env.USE_REPLICATE_DEPLOYMENTS) {
-    console.log(`--- log (indexer): using deployment`)
-    let prediction = await replicate.deployments.predictions.create(
-      'replicate',
-      'retriever-embeddings',
-      { input }
-    )
-    prediction = await replicate.wait(prediction)
-    output = prediction.output
-  } else {
-    output = await replicate.run(
-      'nateraw/bge-large-en-v1.5:9cf9f015a9cb9c61d1a2610659cdac4a4ca222f2d3707a68517b18c198a9add1',
-      { input }
-    )
+  console.log(
+    `--- log (indexer): created ${buckets.length} prediction buckets of chunks`
+  )
+
+  const outputs = []
+
+  for (const bucket of buckets) {
+    console.log(`--- log (indexer): create prediction of bucket`)
+    const input = {
+      texts: JSON.stringify(bucket),
+      batch_size: 32,
+      convert_to_numpy: false,
+      normalize_embeddings: false
+    }
+    let output
+
+    if (process.env.USE_REPLICATE_DEPLOYMENTS) {
+      console.log(`--- log (indexer): using deployment`)
+      let prediction = await replicate.deployments.predictions.create(
+        'replicate',
+        'retriever-embeddings',
+        { input }
+      )
+      prediction = await replicate.wait(prediction)
+      output = prediction.output
+    } else {
+      output = await replicate.run(
+        'nateraw/bge-large-en-v1.5:9cf9f015a9cb9c61d1a2610659cdac4a4ca222f2d3707a68517b18c198a9add1',
+        { input }
+      )
+    }
+
+    outputs.push(...output)
   }
 
   // Mend back prediction output
-  for (const [i, value] of output.entries()) {
+  for (const [i, value] of outputs.entries()) {
     chunks[i].embedding = value
   }
 
