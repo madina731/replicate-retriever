@@ -80,7 +80,24 @@ const URLS = [
   'https://replicate.com/blog/series-b',
   'https://replicate.com/blog/how-to-create-an-ai-narrator',
   'https://replicate.com/blog/how-to-tune-a-realistic-voice-clone',
-  'https://replicate.com/changelog'
+  'https://replicate.com/changelog',
+  // Guides
+  'https://replicate.com/guides/stable-diffusion',
+  'https://replicate.com/guides/stable-diffusion/how-to-use',
+  'https://replicate.com/guides/stable-diffusion/image-to-image',
+  'https://replicate.com/guides/stable-diffusion/inpainting',
+  'https://replicate.com/guides/stable-diffusion/fine-tuning',
+  'https://replicate.com/guides/stable-diffusion/controlnet',
+  'https://replicate.com/guides/stable-diffusion/turbo-and-latent-consistency',
+  'https://replicate.com/guides/stable-diffusion/glossary',
+  'https://replicate.com/guides/language-models',
+  'https://replicate.com/guides/language-models/how-to-use',
+  'https://replicate.com/guides/language-models/use-cases',
+  'https://replicate.com/guides/language-models/popular-models',
+  'https://replicate.com/guides/language-models/how-to-prompt',
+  'https://replicate.com/guides/language-models/advanced-prompting',
+  'https://replicate.com/guides/language-models/fine-tuning',
+  'https://replicate.com/guides/language-models/glossary'
 ]
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
