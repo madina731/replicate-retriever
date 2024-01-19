@@ -97,7 +97,8 @@ const URLS = [
   'https://replicate.com/guides/language-models/how-to-prompt',
   'https://replicate.com/guides/language-models/advanced-prompting',
   'https://replicate.com/guides/language-models/fine-tuning',
-  'https://replicate.com/guides/language-models/glossary'
+  'https://replicate.com/guides/language-models/glossary',
+  'https://replicate.com/guides/model-best-practices'
 ]
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
